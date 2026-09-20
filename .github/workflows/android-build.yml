@@ -27,15 +27,23 @@ jobs:
       run: |
         npm run build || true
 
-    - name: Generate Android Platform
+    - name: Sync Capacitor Android
       run: |
         WEB_DIR="dist"
         if [ -d "build" ]; then WEB_DIR="build"; fi
         if [ -d "out" ]; then WEB_DIR="out"; fi
         if [ -d "public" ] && [ ! -d "dist" ]; then WEB_DIR="public"; fi
+
+        # Ensure capacitor config exists or create one
+        if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
+          npx cap init "FlixCasa" "com.flixcasa.app" --web-dir $WEB_DIR || true
+        fi
+
+        # Remove old android platform if corrupted & add fresh
+        if [ ! -d "android" ]; then
+          npx cap add android || true
+        fi
         
-        npx cap init "FlixCasa" "com.flixcasa.app" --web-dir $WEB_DIR || true
-        npx cap add android || true
         npx cap sync android || true
 
     - name: Set up JDK 17
@@ -44,7 +52,7 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Fix Kotlin Duplicate Class Conflict
+    - name: Fix Kotlin & Capacitor Flavor Mismatch in Gradle
       run: |
         if [ -f "android/build.gradle" ]; then
           echo '
@@ -58,17 +66,28 @@ jobs:
           }' >> android/build.gradle
         fi
 
+        if [ -f "android/app/build.gradle" ]; then
+          echo '
+          android {
+              buildTypes {
+                  debug {
+                      matchingFallbacks = ["release", "debug"]
+                  }
+              }
+          }' >> android/app/build.gradle
+        fi
+
     - name: Build Debug APK
       run: |
         if [ -d "android" ]; then
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
         fi
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: FlixCasa-App-Debug-APK
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        path: android/app/build/outputs/apk/**/*.apk
         
