@@ -27,32 +27,30 @@ jobs:
       run: |
         npm run build || true
 
-    - name: Sync Capacitor
-      run: |
-        WEB_DIR="dist"
-        if [ -d "build" ]; then WEB_DIR="build"; fi
-        if [ -d "out" ]; then WEB_DIR="out"; fi
-        if [ -d "public" ] && [ ! -d "dist" ]; then WEB_DIR="public"; fi
-
-        if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
-          npx cap init "FlixCasa" "com.flixcasa.app" --web-dir $WEB_DIR || true
-        fi
-
-        if [ ! -d "android" ]; then
-          npx cap add android || true
-        fi
-
-        npx cap sync android || true
-
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Inject Flavor Fallbacks in Gradle
+    - name: Re-generate Fresh Android Project
       run: |
-        # Fix Kotlin Duplicate Classes
+        # WEB_DIR तपासणे
+        WEB_DIR="dist"
+        if [ -d "build" ]; then WEB_DIR="build"; fi
+        if [ -d "out" ]; then WEB_DIR="out"; fi
+        if [ -d "public" ] && [ ! -d "dist" ]; then WEB_DIR="public"; fi
+
+        # जुना अडचण देणारा android फोल्डर काढून टाकणे
+        rm -rf android
+
+        # Capacitor कन्फिगर करणे आणि Fresh Android जोडणे
+        npx cap init "FlixCasa" "com.flixcasa.app" --web-dir $WEB_DIR || true
+        npx cap add android
+        npx cap sync android
+
+    - name: Fix Kotlin Duplicate Class Conflict
+      run: |
         if [ -f "android/build.gradle" ]; then
           echo '
           allprojects {
@@ -65,34 +63,15 @@ jobs:
           }' >> android/build.gradle
         fi
 
-        # Inject Flavor Missing Dimension Strategy into app/build.gradle
-        if [ -f "android/app/build.gradle" ]; then
-          sed -i '/defaultConfig {/a \        missingDimensionStrategy "version", "pro"' android/app/build.gradle || true
-          
-          echo '
-          android {
-              buildTypes {
-                  debug {
-                      matchingFallbacks = ["debug", "release"]
-                  }
-                  release {
-                      matchingFallbacks = ["release", "debug"]
-                  }
-              }
-          }' >> android/app/build.gradle
-        fi
-
     - name: Build Debug APK
       run: |
-        if [ -d "android" ]; then
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleProDebug || ./gradlew assembleDebug
-        fi
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleDebug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: FlixCasa-App-Debug-APK
-        path: android/app/build/outputs/apk/**/*.apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
         
