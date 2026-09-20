@@ -27,23 +27,21 @@ jobs:
       run: |
         npm run build || true
 
-    - name: Sync Capacitor Android
+    - name: Sync Capacitor
       run: |
         WEB_DIR="dist"
         if [ -d "build" ]; then WEB_DIR="build"; fi
         if [ -d "out" ]; then WEB_DIR="out"; fi
         if [ -d "public" ] && [ ! -d "dist" ]; then WEB_DIR="public"; fi
 
-        # Ensure capacitor config exists or create one
         if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
           npx cap init "FlixCasa" "com.flixcasa.app" --web-dir $WEB_DIR || true
         fi
 
-        # Remove old android platform if corrupted & add fresh
         if [ ! -d "android" ]; then
           npx cap add android || true
         fi
-        
+
         npx cap sync android || true
 
     - name: Set up JDK 17
@@ -52,8 +50,9 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Fix Kotlin & Capacitor Flavor Mismatch in Gradle
+    - name: Inject Flavor Fallbacks in Gradle
       run: |
+        # Fix Kotlin Duplicate Classes
         if [ -f "android/build.gradle" ]; then
           echo '
           allprojects {
@@ -66,11 +65,17 @@ jobs:
           }' >> android/build.gradle
         fi
 
+        # Inject Flavor Missing Dimension Strategy into app/build.gradle
         if [ -f "android/app/build.gradle" ]; then
+          sed -i '/defaultConfig {/a \        missingDimensionStrategy "version", "pro"' android/app/build.gradle || true
+          
           echo '
           android {
               buildTypes {
                   debug {
+                      matchingFallbacks = ["debug", "release"]
+                  }
+                  release {
                       matchingFallbacks = ["release", "debug"]
                   }
               }
@@ -82,7 +87,7 @@ jobs:
         if [ -d "android" ]; then
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleProDebug || ./gradlew assembleDebug
         fi
 
     - name: Upload APK Artifact
