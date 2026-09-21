@@ -1,10 +1,8 @@
 {
-  "appId": "com.flixcasa.pro",
-  "appName": "FlixCasa Pro",
-  "webDir": "out",
-  "server": {
-    "url": "https://flix-casa-pro-v2.vercel.app",
-    "androidScheme": "https",
-    "cleartext": true
-  }
+  " appId\: \com.flixcasa.app\,
+ \appName\: \FlixCasa\,
+ \webDir\: \out\,
+ \server\: {
+ \androidScheme\: \https\
+ }
 }
