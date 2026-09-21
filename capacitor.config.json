@@ -1,8 +1,1 @@
-{
-  " appId\: \com.flixcasa.app\,
- \appName\: \FlixCasa\,
- \webDir\: \out\,
- \server\: {
- \androidScheme\: \https\
- }
-}
+{"appId":"com.flixcasa.app","appName":"FlixCasa","webDir":"out"}
