@@ -47,9 +47,13 @@ function BrowseContent() {
         const data = await res.json();
 
         const filterKids = (items: MovieItem[]) =>
-          activeProfile?.isKids
-            ? items.filter((m) => !m.genreIds.some((g) => KIDS_BLOCKED_GENRES.includes(g)))
-            : items;
+          items.filter((m) => {
+            if (m.genreIds.some((g) => KIDS_BLOCKED_GENRES.includes(g)) && activeProfile?.isKids) return false;
+            const ratingRank = { "10+": 1, "13+": 2, "16+": 3, "18+": 4 };
+            const profileRating = activeProfile?.contentRating || (activeProfile?.isKids ? "13+" : "all");
+            if (profileRating === "all") return true;
+            return (ratingRank[m.contentRating || "13+"] || 2) <= (ratingRank[profileRating as keyof typeof ratingRank] || 2);
+          });
 
         const uniqueItems = (items: MovieItem[]) => {
           const seen = new Set<string>();

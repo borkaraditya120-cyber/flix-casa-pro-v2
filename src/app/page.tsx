@@ -22,6 +22,7 @@ export default function WelcomePage() {
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState<Profile | null>(null);
   const [profileAvatar, setProfileAvatar] = useState("🎬");
+  const [profileRating, setProfileRating] = useState<Profile["contentRating"]>("all");
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && useProfileStore.getState().activeProfile) {
@@ -37,15 +38,16 @@ export default function WelcomePage() {
   const handleAdd = async () => {
     if (!account) return;
     if (!profileName.trim()) return;
-    await addProfile(account.id, profileName.trim(), profileAvatar);
+    await addProfile(account.id, profileName.trim(), profileAvatar, profileRating);
     setProfileName("");
     setProfileAvatar("🎬");
+    setProfileRating("all");
     setProfileDialogOpen(false);
   };
 
-  const handleEdit = async (profile: Profile, newName: string) => {
+  const handleEdit = async (profile: Profile, newName: string, contentRating: Profile["contentRating"]) => {
     if (!account) return;
-    await updateProfile(account.id, profile.id, { name: newName });
+    await updateProfile(account.id, profile.id, { name: newName, contentRating });
   };
 
   const handleDelete = async (profile: Profile) => {
@@ -111,6 +113,7 @@ export default function WelcomePage() {
             <h2 id="add-profile-title" className="text-lg font-semibold">Add Profile</h2>
             <input autoFocus required value={profileName} onChange={(event) => setProfileName(event.target.value)} placeholder="Profile Name" className="mt-4 w-full rounded-lg bg-zinc-950 px-3 py-2 text-white outline-none focus:ring-2 focus:ring-yellow-400" />
             <div className="mt-4 flex flex-wrap gap-2" aria-label="Avatar selector">{["🎬", "🎭", "🌟", "🎪", "🦁", "🐼"].map((avatar) => <button type="button" key={avatar} onClick={() => setProfileAvatar(avatar)} className={`rounded-lg px-3 py-2 text-2xl ${profileAvatar === avatar ? "bg-yellow-400" : "bg-zinc-800"}`} aria-label={`Use ${avatar} avatar`}>{avatar}</button>)}</div>
+            <fieldset className="mt-4"><legend className="mb-2 text-sm text-zinc-400">Content Rating</legend><div className="flex flex-wrap gap-2">{(["all", "18+", "16+", "13+", "10+"] as const).map((rating) => <label key={rating} className={`cursor-pointer rounded px-3 py-2 text-xs ${profileRating === rating ? "bg-yellow-400 text-black" : "bg-zinc-800 text-zinc-300"}`}><input type="radio" name="contentRating" value={rating} checked={profileRating === rating} onChange={() => setProfileRating(rating)} className="sr-only" />{rating === "all" ? "All" : rating}</label>)}</div></fieldset>
             <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setProfileDialogOpen(false)} className="rounded bg-zinc-700 px-4 py-2 text-sm">Cancel</button><button type="submit" className="rounded bg-yellow-400 px-4 py-2 text-sm font-semibold text-black">Add Profile</button></div>
           </form>
         </div>

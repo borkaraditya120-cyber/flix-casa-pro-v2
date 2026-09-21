@@ -15,6 +15,10 @@ android {
         }
     }
 
+    packagingOptions {
+        resources.excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE', 'META-INF/LICENSE.txt', 'META-INF/NOTICE', 'META-INF/NOTICE.txt']
+    }
+
     flavorDimensions "version"
     productFlavors {
         pro {
@@ -22,10 +26,10 @@ android {
             applicationId "com.flixcasa.pro"
             resValue "string", "app_name", "Flix Casa Pro"
         }
-        standard {
+        mobile {
             dimension "version"
-            applicationId "com.flixcasa.standard"
-            resValue "string", "app_name", "Flix Casa Standard"
+            applicationId "com.flixcasa.mobile"
+            resValue "string", "app_name", "Flix Casa Mobile"
         }
         tv {
             dimension "version"
@@ -40,6 +44,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+}
+
+configurations.configureEach {
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
 }
 
 repositories {

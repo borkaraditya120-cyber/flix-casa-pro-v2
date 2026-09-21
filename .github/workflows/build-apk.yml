@@ -19,34 +19,38 @@ jobs:
           node-version: 20
 
       - name: Install Dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
 
       - name: Force Build Web Assets
         run: |
           export NEXT_DISABLE_ESLINT=1
           export NEXT_TELEMETRY_DISABLED=1
           export TSC_COMPILE_ON_ERROR=true
-          npm run build || true
-          mkdir -p out
-          touch out/index.html
+          npm run build
 
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21'
+
+      - name: Verify web assets
+        run: test -f out/index.html
 
       - name: Sync Capacitor Android
-        run: npx cap sync android || true
+        run: npx cap sync android
 
       - name: Build Android APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleMobileDebug assembleTvDebug assembleProDebug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FlixCasa-Pro-APK
-          path: android/app/build/outputs/**/*.apk
+          name: flixcasa-android-debug-apks
+          path: |
+            android/app/build/outputs/apk/mobile/debug/*.apk
+            android/app/build/outputs/apk/tv/debug/*.apk
+            android/app/build/outputs/apk/pro/debug/*.apk

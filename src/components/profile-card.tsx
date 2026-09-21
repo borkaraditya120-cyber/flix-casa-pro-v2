@@ -7,7 +7,7 @@ import { useState } from "react";
 interface ProfileCardProps {
   profile: Profile;
   onSelect: (profile: Profile) => void;
-  onEdit?: (profile: Profile, newName: string) => void;
+  onEdit?: (profile: Profile, newName: string, contentRating: Profile["contentRating"]) => void;
   onDelete?: (profile: Profile) => void;
   isAdd?: boolean;
   onAdd?: () => void;
@@ -16,6 +16,7 @@ interface ProfileCardProps {
 export function ProfileCard({ profile, onSelect, onEdit, onDelete, isAdd, onAdd }: ProfileCardProps) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(profile.name);
+  const [editRating, setEditRating] = useState<Profile["contentRating"]>(profile.contentRating || (profile.isKids ? "13+" : "all"));
 
   if (isAdd) {
     return (
@@ -33,7 +34,7 @@ export function ProfileCard({ profile, onSelect, onEdit, onDelete, isAdd, onAdd 
 
   const handleSaveEdit = () => {
     if (editName.trim() && onEdit) {
-      onEdit(profile, editName.trim());
+      onEdit(profile, editName.trim(), editRating);
       setEditing(false);
     }
   };
@@ -48,15 +49,18 @@ export function ProfileCard({ profile, onSelect, onEdit, onDelete, isAdd, onAdd 
           {profile.avatar}
         </div>
         {editing ? (
-          <input
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            onBlur={handleSaveEdit}
-            onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
-            className="w-28 rounded bg-zinc-800 px-2 py-1 text-center text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            autoFocus
-            onClick={(e) => e.stopPropagation()}
-          />
+          <>
+            <input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onBlur={handleSaveEdit}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
+              className="w-28 rounded bg-zinc-800 px-2 py-1 text-center text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+            />
+            <select value={editRating} onChange={(event) => setEditRating(event.target.value as Profile["contentRating"])} onClick={(event) => event.stopPropagation()} className="w-28 rounded bg-zinc-800 px-2 py-1 text-center text-xs text-white"><option value="all">All</option><option value="18+">18+</option><option value="16+">16+</option><option value="13+">13+</option><option value="10+">10+</option></select>
+          </>
         ) : (
           <span className="text-sm text-zinc-300 group-hover:text-white">{profile.name}</span>
         )}

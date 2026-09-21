@@ -16,6 +16,7 @@ export interface Profile {
   isKids: boolean;
   accountId: string;
   createdAt: string;
+  contentRating?: "all" | "18+" | "16+" | "13+" | "10+";
 }
 
 export interface MovieItem {
@@ -31,6 +32,7 @@ export interface MovieItem {
   originCountry?: string[];
   originalLanguage?: string;
   mediaType: "movie" | "tv";
+  contentRating?: "10+" | "13+" | "16+" | "18+";
 }
 
 export interface TorrentResult {

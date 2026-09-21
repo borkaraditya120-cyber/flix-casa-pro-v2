@@ -15,8 +15,8 @@ interface ProfileState {
   hydrate: (accountId: string) => Promise<void>;
   reset: () => void;
   setActiveProfile: (profile: Profile | null) => void;
-  addProfile: (accountId: string, name: string, avatar?: string) => Promise<Profile>;
-  updateProfile: (accountId: string, id: string, updates: Partial<Pick<Profile, "name" | "avatar">>) => Promise<void>;
+  addProfile: (accountId: string, name: string, avatar?: string, contentRating?: Profile["contentRating"]) => Promise<Profile>;
+  updateProfile: (accountId: string, id: string, updates: Partial<Pick<Profile, "name" | "avatar" | "contentRating">>) => Promise<void>;
   deleteProfile: (accountId: string, id: string) => Promise<void>;
   getKidsProfile: (accountId: string) => Profile | undefined;
 }
@@ -59,7 +59,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
   setActiveProfile: (profile) => set({ activeProfile: profile }),
 
-  addProfile: async (accountId, name, avatar) => {
+  addProfile: async (accountId, name, avatar, contentRating = "all") => {
     const trimmed = name.trim();
     if (!trimmed) throw new Error("Profile name is required");
 
@@ -67,6 +67,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       id: crypto.randomUUID(),
       name: trimmed,
       avatar: avatar || DEFAULT_AVATARS[Math.floor(Math.random() * DEFAULT_AVATARS.length)],
+      contentRating,
       isKids: false,
       accountId,
       createdAt: new Date().toISOString(),
