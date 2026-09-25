@@ -35,10 +35,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Login failed");
     const account: GoogleAccount = data.account;
-    if (mode === "signup") {
-      await supabase.auth.signUp({ email, password, options: { data: { name: account.name, picture: account.picture } } }).catch(() => undefined);
-    } else {
-      await supabase.auth.signInWithPassword({ email, password }).catch(() => undefined);
+    if (supabase) {
+      if (mode === "signup") {
+        await supabase.auth.signUp({ email, password, options: { data: { name: account.name, picture: account.picture } } }).catch(() => undefined);
+      } else {
+        await supabase.auth.signInWithPassword({ email, password }).catch(() => undefined);
+      }
     }
     await setEncryptedItem("session", account, account.id);
     window.localStorage.setItem("FLIXCASA_ACCOUNT_ID", account.id);
@@ -48,7 +50,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     const { account } = get();
     await fetch(cloudApi("/api/auth/logout"), { method: "POST", credentials: "include" });
-    await supabase.auth.signOut().catch(() => undefined);
+    if (supabase) {
+      await supabase.auth.signOut().catch(() => undefined);
+    }
     if (account) {
       const { removeEncryptedItem } = await import("@/lib/storage");
       removeEncryptedItem("session", account.id);

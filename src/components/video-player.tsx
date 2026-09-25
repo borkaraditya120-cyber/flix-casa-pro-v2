@@ -8,6 +8,10 @@ import { getPlayerRemoteConfig, resolvePlayerServers, type PlayerRemoteConfig } 
 import type { DeviceType } from "@/hooks/use-device-type";
 import { supabase } from "@/lib/supabase";
 import { isRemoteBackKey, requestAppFullscreen } from "@/lib/device/device-context";
+import { isAdSystemEnabled, isStandardBuild } from "@/lib/app-variant";
+
+const APP_VARIANT = (process.env.NEXT_PUBLIC_APP_VARIANT || "pro").toLowerCase();
+const IS_STANDARD_BUILD = isStandardBuild;
 
 interface VideoPlayerProps {
   src?: string;
@@ -78,9 +82,12 @@ export function VideoPlayer({ src, sources, title, tmdbId, poster, preferredServ
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showPosterBackdrop, setShowPosterBackdrop] = useState(false);
   const [mediaReady, setMediaReady] = useState(false);
+  const [showAdOverlay, setShowAdOverlay] = useState(false);
   const scanStartedRef = useRef(false);
   const completionHandledRef = useRef(false);
   const fullscreenAttemptedRef = useRef(false);
+  const adScheduleRef = useRef<number[]>([]);
+  const adPointerRef = useRef(0);
 
   const cleanId = cleanTmdbId(tmdbId);
   const storageKey = cleanId ? `flixcasa_resume_${cleanId}` : "";
@@ -291,6 +298,22 @@ export function VideoPlayer({ src, sources, title, tmdbId, poster, preferredServ
     if (!activeSrc || fullscreenAttemptedRef.current) return;
     fullscreenAttemptedRef.current = true;
     void requestAppFullscreen(videoRef.current || playerRootRef.current);
+  }, [activeSrc]);
+
+  useEffect(() => {
+    if (!IS_STANDARD_BUILD || !videoRef.current) {
+      adScheduleRef.current = [];
+      adPointerRef.current = 0;
+      setShowAdOverlay(false);
+      return;
+    }
+    const duration = videoRef.current.duration || 0;
+    if (!duration || duration <= 0) return;
+    const intervalCount = Math.min(8, Math.max(5, Math.ceil(duration / 120)));
+    const schedule = Array.from({ length: intervalCount }, (_, index) => ((duration * (index + 1)) / (intervalCount + 1)));
+    adScheduleRef.current = schedule;
+    adPointerRef.current = 0;
+    setShowAdOverlay(false);
   }, [activeSrc]);
 
   useEffect(() => {
@@ -740,6 +763,21 @@ export function VideoPlayer({ src, sources, title, tmdbId, poster, preferredServ
             const current = event.currentTarget.currentTime;
             const duration = event.currentTarget.duration;
             setCurrentTime(current);
+
+            if (IS_STANDARD_BUILD && duration > 0 && !showAdOverlay && adPointerRef.current < adScheduleRef.current.length) {
+              const nextAdTime = adScheduleRef.current[adPointerRef.current];
+              if (typeof nextAdTime === "number" && current >= nextAdTime - 1 && current <= nextAdTime + 1) {
+                adPointerRef.current += 1;
+                event.currentTarget.pause();
+                setShowAdOverlay(true);
+                const timer = window.setInterval(() => {
+                  window.clearInterval(timer);
+                  setShowAdOverlay(false);
+                  void event.currentTarget.play().catch(() => undefined);
+                }, 3000);
+              }
+            }
+
             if (duration > 0 && current / duration >= 0.92 && !completionHandledRef.current) {
               completionHandledRef.current = true;
               onComplete?.();
@@ -747,7 +785,7 @@ export function VideoPlayer({ src, sources, title, tmdbId, poster, preferredServ
             if (current - progressSyncRef.current >= 5) {
               progressSyncRef.current = current;
               onProgress?.(current, event.currentTarget.duration);
-              if (accountId && cleanId) {
+              if (accountId && cleanId && supabase) {
                 void (async () => {
                   try {
                     const { error } = await supabase.from("watch_history").upsert({ user_id: accountId, movie_id: Number(cleanId), progress: current, duration: duration || 0, updated_at: new Date().toISOString() }, { onConflict: "user_id,movie_id" });

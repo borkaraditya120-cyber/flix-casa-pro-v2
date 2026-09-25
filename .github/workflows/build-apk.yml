@@ -2,52 +2,50 @@ name: Build FlixCasa Android APKs
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main
+      - master
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Source
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: npm
+          node-version: 20
+          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Build static web assets
-        run: |
-          export NEXT_TELEMETRY_DISABLED=1
-          npm run build
-          test -f out/index.html
-
-      - name: Setup Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: gradle
+      - name: Build Next.js Static Export
+        run: npm run build
 
       - name: Sync Capacitor Android
-        run: npx --no-install cap sync android
+        run: npx cap sync android
 
-      - name: Build Mobile, TV, and Pro debug APKs
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Build All Android APK Variants
         run: |
-          chmod +x android/gradlew
-          android/gradlew --no-daemon assembleMobileDebug assembleTvDebug assembleProDebug
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleProRelease assembleStandardRelease assembleTvRelease
 
-      - name: Upload all debug APKs
+      - name: Upload APKs to GitHub Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: flixcasa-android-debug-apks
+          name: FlixCasa-APKs
           path: |
-            android/app/build/outputs/apk/mobile/debug/**/*.apk
-            android/app/build/outputs/apk/tv/debug/**/*.apk
-            android/app/build/outputs/apk/pro/debug/**/*.apk
-          if-no-files-found: error
+            android/app/build/outputs/apk/pro/release/*.apk
+            android/app/build/outputs/apk/standard/release/*.apk
+            android/app/build/outputs/apk/tv/release/*.apk
