@@ -1,10 +1,11 @@
-name: Build FlixCasa Android APKs
+name: Build FlixCasa Debug APKs
 
 on:
   push:
     branches:
       - main
       - master
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,12 +14,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - variant: standard
-            gradle-task: assembleStandardRelease
-          - variant: pro
-            gradle-task: assembleProRelease
+          - variant: mobile
+            gradle-task: assembleMobileDebug
           - variant: tv
-            gradle-task: assembleTvRelease
+            gradle-task: assembleTvDebug
+          - variant: universal
+            gradle-task: assembleUniversalDebug
 
     steps:
       - name: Checkout Code
@@ -47,15 +48,15 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Build ${{ matrix.variant }} Android APK
+      - name: Build ${{ matrix.variant }} Debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew ${{ matrix.gradle-task }}
 
-      - name: Upload APKs to GitHub Artifacts
+      - name: Upload ${{ matrix.variant }} Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: FlixCasa-${{ matrix.variant }}-APK
-          path: |
-            android/app/build/outputs/apk/${{ matrix.variant }}/release/*.apk
+          name: FlixCasa-${{ matrix.variant }}-Debug-APK
+          path: android/app/build/outputs/apk/${{ matrix.variant }}/debug/*.apk
+          if-no-files-found: error

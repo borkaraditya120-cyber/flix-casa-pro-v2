@@ -86,7 +86,7 @@ function WatchContent() {
       } catch {
         if (!mountedRef.current) return;
         const fallbackSources = buildStreamSources(routeId, mediaType, season, episode);
-        const fallbackUrl = fallbackSources[0]?.url || buildBackupEmbedUrl(String(params.id), mediaType);
+        const fallbackUrl = fallbackSources[0]?.url || buildBackupEmbedUrl(routeId, mediaType);
         setSources(fallbackSources); setPrefetchedUrl(fallbackUrl); setStreamUrl(fallbackUrl); setError("");
       } finally {
         if (mountedRef.current) { setIsScanning(false); setLoading(false); }

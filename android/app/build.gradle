@@ -34,6 +34,11 @@ android {
     flavorDimensions "version"
 
     productFlavors {
+        mobile {
+            dimension "version"
+            applicationId "com.flixcasa.mobile"
+            resValue "string", "app_name", "FlixCasa Mobile"
+        }
         pro {
             dimension "version"
             applicationId "com.flixcasa.pro"
@@ -49,9 +54,18 @@ android {
             applicationId "com.flixcasa.tv"
             resValue "string", "app_name", "Flix Casa TV"
         }
+        universal {
+            dimension "version"
+            applicationId "com.flixcasa.app"
+            resValue "string", "app_name", "FlixCasa Universal"
+        }
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

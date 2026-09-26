@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import { useAuthStore } from "@/stores/auth-store";
 import { useDeviceType } from "@/hooks/use-device-type";
+import { readSafeApiResponse } from "@/lib/safe-api-response";
 
 export function GoogleLoginButton() {
   const login = useAuthStore((s) => s.login);
@@ -14,6 +15,7 @@ export function GoogleLoginButton() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const [qrId, setQrId] = useState<string | null>(null);
   const [resetStep, setResetStep] = useState<"none" | "email" | "code" | "password">("none");
@@ -23,6 +25,7 @@ export function GoogleLoginButton() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
+    setNotice("");
     if (mode === "signup" && password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
@@ -30,11 +33,21 @@ export function GoogleLoginButton() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const verification = await fetch("/api/auth/verify-email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
-        const verificationData = await verification.json();
-        if (!verification.ok || !verificationData.valid) throw new Error(verificationData.error || "This Google account is invalid or does not exist.");
+        try {
+          const verification = await fetch("/api/auth/verify-email", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ email }) });
+          const parsed = await readSafeApiResponse<{ valid?: boolean; error?: string }>(verification);
+          const routeUnavailable = [404, 405, 501].includes(verification.status) || verification.status >= 500 || !parsed.isJson;
+          if (!routeUnavailable && parsed.data && (!verification.ok || parsed.data.valid === false)) {
+            throw new Error(parsed.data.error || "This Google account could not be verified.");
+          }
+        } catch (verificationError) {
+          if (!(verificationError instanceof TypeError)) throw verificationError;
+        }
       }
-      await login(email, name || email.split("@")[0], undefined, password, mode);
+      const authMode = await login(email, name || email.split("@")[0], undefined, password, mode);
+      setNotice(authMode === "local"
+        ? mode === "signup" ? "Account created successfully on this device (local demo mode)." : "Signed in with this device's local demo account."
+        : mode === "signup" ? "Account created successfully." : "Signed in successfully.");
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Authentication failed. Please try again.");
     } finally {
@@ -47,8 +60,8 @@ export function GoogleLoginButton() {
     setLoading(true); setError("");
     try {
       const response = await fetch("/api/auth/reset-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "request", email }) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Unable to send reset code.");
+      const parsed = await readSafeApiResponse<{ error?: string }>(response);
+      if (!response.ok) throw new Error(parsed.data?.error || "Password reset service is unavailable.");
       setResetStep("code");
     } catch (resetError) { setError(resetError instanceof Error ? resetError.message : "Unable to send reset code."); }
     finally { setLoading(false); }
@@ -68,8 +81,8 @@ export function GoogleLoginButton() {
     event.preventDefault(); setLoading(true); setError("");
     try {
       const response = await fetch("/api/auth/reset-password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "reset", email, code: resetCode, password: resetPassword }) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Unable to reset password.");
+      const parsed = await readSafeApiResponse<{ error?: string }>(response);
+      if (!response.ok) throw new Error(parsed.data?.error || "Unable to reset password.");
       setResetStep("none"); setMode("login"); setError("Password updated. You can now log in.");
     } catch (resetError) { setError(resetError instanceof Error ? resetError.message : "Unable to reset password."); }
     finally { setLoading(false); }
@@ -119,6 +132,7 @@ export function GoogleLoginButton() {
         <input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={mode === "signup" ? "Create Password" : "Password"} autoComplete={mode === "signup" ? "new-password" : "current-password"} className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-cyan-400" />
         {mode === "signup" && <input required minLength={8} type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Confirm Password" autoComplete="new-password" className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white outline-none focus:border-cyan-400" />}
       </div>
+      {notice && <p role="status" className="mt-4 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">{notice}</p>}
       {error && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
       <button type="submit" disabled={loading || !email || !password || (mode === "signup" && (!name || !confirmPassword))} className={`mt-6 w-full rounded-lg px-4 py-3 font-bold text-white shadow-lg transition disabled:cursor-not-allowed disabled:opacity-40 ${mode === "signup" ? "bg-gradient-to-r from-blue-600 to-red-600 shadow-red-950/40" : "bg-cyan-600 shadow-cyan-950/40 hover:bg-cyan-500"}`}>
         {loading ? "PLEASE WAIT..." : mode === "signup" ? "CREATE ACCOUNT" : "LOG IN"}

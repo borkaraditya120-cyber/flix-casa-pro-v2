@@ -13,6 +13,8 @@ export default function WelcomePage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
   const account = useAuthStore((s) => s.account);
+  const authNotice = useAuthStore((s) => s.authNotice);
+  const clearAuthNotice = useAuthStore((s) => s.clearAuthNotice);
   const profiles = useProfileStore((s) => s.profiles);
   const setActiveProfile = useProfileStore((s) => s.setActiveProfile);
   const addProfile = useProfileStore((s) => s.addProfile);
@@ -63,6 +65,12 @@ export default function WelcomePage() {
   const kidsProfile = profiles.find((profile) => profile.isKids) || null;
   const customProfiles = profiles.filter((profile) => !profile.isKids);
 
+  useEffect(() => {
+    if (!authNotice) return;
+    const timeout = window.setTimeout(clearAuthNotice, 8000);
+    return () => window.clearTimeout(timeout);
+  }, [authNotice, clearAuthNotice]);
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
@@ -85,6 +93,7 @@ export default function WelcomePage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-4 py-8">
       <h1 className="mb-2 text-3xl font-bold md:text-4xl">Who&apos;s Watching?</h1>
       <p className="mb-10 text-zinc-400">Choose a profile to continue</p>
+      {authNotice && <p role="status" className="mb-6 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-200">{authNotice}</p>}
 
       <div className="flex flex-wrap items-start justify-center gap-6 md:gap-10">
         {kidsProfile && (
