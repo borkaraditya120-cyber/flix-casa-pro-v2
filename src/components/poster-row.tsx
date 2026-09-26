@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import type { MovieItem } from "@/types";
 import { PosterCard } from "./poster-card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
 
 const MAX_POSTERS_PER_ROW = 15;
 const VISIBLE_POSTERS = 8;
@@ -13,9 +14,16 @@ interface PosterRowProps {
   title: string;
   items: MovieItem[];
   onSelect?: (item: MovieItem) => void;
+  onFocusItem?: (item: MovieItem) => void;
+  onBlurItem?: (item: MovieItem) => void;
+  onHoverItem?: (item: MovieItem) => void;
+  onLeaveItem?: (item: MovieItem) => void;
+  releaseBadge?: (item: MovieItem) => string | undefined;
+  progressFor?: (item: MovieItem) => number | undefined;
+  remainingFor?: (item: MovieItem) => string | undefined;
 }
 
-export function PosterRow({ title, items, onSelect }: PosterRowProps) {
+export function PosterRow({ title, items, onSelect, onFocusItem, onBlurItem, onHoverItem, onLeaveItem, releaseBadge, progressFor, remainingFor }: PosterRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [startIndex, setStartIndex] = useState(0);
 
@@ -32,7 +40,7 @@ export function PosterRow({ title, items, onSelect }: PosterRowProps) {
   const windowItems = visibleItems.slice(startIndex, startIndex + VISIBLE_POSTERS);
 
   return (
-    <section className="mb-6">
+    <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 240, damping: 28 }} className="mb-6">
       <div className="mb-3 flex items-center justify-between px-1">
         <h2 className="text-lg font-semibold text-white md:text-xl">{title}</h2>
         <div className="flex gap-2">
@@ -47,10 +55,20 @@ export function PosterRow({ title, items, onSelect }: PosterRowProps) {
       <div ref={rowRef} className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
         {windowItems.map((item) => (
           <div key={item.id} className="w-[120px] shrink-0 snap-start sm:w-[140px] md:w-[160px]">
-            <PosterCard item={item} onClick={onSelect} />
+            <PosterCard
+              item={item}
+              onClick={onSelect}
+              onFocusItem={onFocusItem}
+              onBlurItem={onBlurItem}
+              onHoverItem={onHoverItem}
+              onLeaveItem={onLeaveItem}
+              releaseBadge={releaseBadge?.(item)}
+              progress={progressFor?.(item)}
+              remaining={remainingFor?.(item)}
+            />
           </div>
         ))}
       </div>
-    </section>
+    </motion.section>
   );
 }

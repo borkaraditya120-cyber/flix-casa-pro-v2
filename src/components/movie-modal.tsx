@@ -9,6 +9,7 @@ import { isTV, isPro } from "@/lib/variant";
 import { useRouter } from "next/navigation";
 import { prefetchStreamSources } from "@/lib/stream";
 import { downloadProMedia } from "@/lib/offline-download";
+import { requestAppFullscreen } from "@/lib/device/device-context";
 
 interface MovieModalProps {
   item: MovieItem | null;
@@ -26,7 +27,10 @@ export function MovieModal({ item, onClose }: MovieModalProps) {
   if (!item) return null;
 
   const handlePlay = () => {
-    router.push(`/watch/${item.id}?type=${item.mediaType}&title=${encodeURIComponent(item.title)}`);
+    void requestAppFullscreen(document.documentElement);
+    const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: string) => Promise<void> };
+    if (typeof orientation?.lock === "function") void orientation.lock("landscape").catch(() => undefined);
+    router.push(`/watch/?id=${item.id}&type=${item.mediaType}&title=${encodeURIComponent(item.title)}`);
   };
 
   const handleDownload = async () => {

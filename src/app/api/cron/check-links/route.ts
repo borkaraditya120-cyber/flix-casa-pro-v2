@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getMongoDb } from "@/lib/mongodb";
 
 interface StreamLinkDoc {
@@ -9,6 +9,19 @@ interface StreamLinkDoc {
   backupUrls?: string[];
   status?: string;
   updatedAt?: string;
+}
+
+interface TelegramUpdate {
+  message?: {
+    video?: unknown;
+    document?: unknown;
+    text?: string;
+    caption?: string;
+  };
+}
+
+interface TelegramUpdatesResponse {
+  result?: TelegramUpdate[];
 }
 
 async function verifyLink(url: string, timeoutMs = 4000): Promise<{ ok: boolean; status?: number; error?: string }> {
@@ -42,9 +55,9 @@ async function fetchTelegramBackupStream(): Promise<string | null> {
     const response = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=1`, { cache: "no-store" });
     if (!response.ok) return null;
 
-    const data = await response.json();
+    const data = await response.json() as TelegramUpdatesResponse;
     const messages = data?.result ?? [];
-    const latest = messages.filter((item: any) => item.message?.video || item.message?.document || item.message?.text)?.at(-1);
+    const latest = messages.filter((item) => item.message?.video || item.message?.document || item.message?.text)?.at(-1);
     const text = latest?.message?.text || latest?.message?.caption || "";
 
     if (!text) return null;
@@ -56,7 +69,7 @@ async function fetchTelegramBackupStream(): Promise<string | null> {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const db = await getMongoDb();
   if (!db) {
     return NextResponse.json({ ok: false, error: "MongoDB not configured" }, { status: 500 });

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTrendingIndia, getGlobalTop, getByGenre, searchMovies, getKidsContent, getMovieDetails, GENRE_ROWS } from "@/lib/tmdb";
+import { getTrendingIndia, getTrendingTv, getGlobalTop, getByGenre, searchMovies, getKidsContent, getMovieDetails, getMovieTrailer, getUpcomingMovies, GENRE_ROWS } from "@/lib/tmdb";
 import { sanitizeSearchQuery } from "@/lib/sanitize";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
@@ -12,12 +12,16 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type");
   const query = searchParams.get("q");
   const id = searchParams.get("id");
+  const mediaType = searchParams.get("mediaType") === "tv" ? "tv" : "movie";
   const genreId = searchParams.get("genreId");
   const category = searchParams.get("category");
   const kids = searchParams.get("kids");
 
   try {
     if (id && /^\d+$/.test(id)) {
+      if (type === "videos") {
+        return NextResponse.json({ trailerKey: await getMovieTrailer(Number(id), mediaType) });
+      }
       const result = await getMovieDetails(Number(id), type === "tv" ? "tv" : "movie");
       return NextResponse.json({ result });
     }
@@ -42,12 +46,18 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ results: await getTrendingIndia() });
       case "global-top":
         return NextResponse.json({ results: await getGlobalTop() });
+      case "trending-tv":
+        return NextResponse.json({ results: await getTrendingTv() });
+      case "upcoming":
+        return NextResponse.json({ results: await getUpcomingMovies() });
       case "genres":
         return NextResponse.json({ genres: GENRE_ROWS });
       default:
         return NextResponse.json({
           trending: await getTrendingIndia(),
           global: await getGlobalTop(),
+          upcoming: await getUpcomingMovies(),
+          tv: await getTrendingTv(),
           genres: GENRE_ROWS,
         });
     }

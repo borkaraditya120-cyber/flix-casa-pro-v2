@@ -9,6 +9,7 @@ import { ForceUpdateGuard } from "@/components/force-update-guard";
 import { useDeviceType } from "@/hooks/use-device-type";
 import { updatePresence } from "@/lib/cloud-sync";
 import UpdateChecker from "@/components/UpdateChecker";
+import { StandardAdScript } from "@/components/standard-ad-script";
 import { usePathname, useRouter } from "next/navigation";
 
 interface AppProviderProps {
@@ -100,6 +101,7 @@ export function AppProvider({ children }: AppProviderProps) {
     <ForceUpdateGuard>
       {children}
       <UpdateChecker />
+      <StandardAdScript />
       <FlixSplash appReady={initialized} />
     </ForceUpdateGuard>
   );

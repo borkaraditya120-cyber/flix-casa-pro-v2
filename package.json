@@ -31,6 +31,7 @@
     "@capacitor/cli": "^5.7.8",
     "@capacitor/core": "^5.7.8",
     "@supabase/supabase-js": "^2.116.0",
+    "framer-motion": "^13.4.4",
     "hls.js": "^1.6.17",
     "jose": "^6.2.8",
     "lucide-react": "^1.29.0",
@@ -42,16 +43,16 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "electron": "^44.4.1",
-    "electron-builder": "^26.15.3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "electron": "^44.4.1",
+    "electron-builder": "^26.15.3",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "@tailwindcss/postcss": "^4"
+    "typescript": "^5"
   },
   "capacitor": {
     "cli": {

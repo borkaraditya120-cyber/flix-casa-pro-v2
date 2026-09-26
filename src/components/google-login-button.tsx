@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Image from "next/image";
 import { useAuthStore } from "@/stores/auth-store";
 import { useDeviceType } from "@/hooks/use-device-type";
 
@@ -93,7 +94,7 @@ export function GoogleLoginButton() {
 
   if (qrId) {
     const qrUrl = `${window.location.origin}/?tvPair=${encodeURIComponent(qrId)}`;
-    return <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/95 p-6 text-center shadow-2xl sm:p-8"><h2 className="text-xl font-bold">Scan to sign in</h2><p className="mt-2 text-sm text-zinc-400">Scan this code from a signed-in mobile device.</p><img src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrUrl)}`} alt="TV login QR code" className="mx-auto mt-6 h-64 w-64 rounded bg-white p-2" /><p className="mt-4 text-xs text-zinc-500">Code refreshes automatically.</p><button type="button" onClick={() => setQrId(null)} className="mt-5 rounded bg-zinc-700 px-4 py-2 text-sm">Use remote login</button></div>;
+    return <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/95 p-6 text-center shadow-2xl sm:p-8"><h2 className="text-xl font-bold">Scan to sign in</h2><p className="mt-2 text-sm text-zinc-400">Scan this code from a signed-in mobile device.</p><Image unoptimized width={260} height={260} src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrUrl)}`} alt="TV login QR code" className="mx-auto mt-6 h-64 w-64 rounded bg-white p-2" /><p className="mt-4 text-xs text-zinc-500">Code refreshes automatically.</p><button type="button" onClick={() => setQrId(null)} className="mt-5 rounded bg-zinc-700 px-4 py-2 text-sm">Use remote login</button></div>;
   }
 
   if (resetStep !== "none") {

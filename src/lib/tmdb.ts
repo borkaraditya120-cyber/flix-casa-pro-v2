@@ -90,6 +90,11 @@ export async function getTrendingIndia(): Promise<MovieItem[]> {
   return [...indian, ...trending].map((m) => mapMovie(m));
 }
 
+export async function getTrendingTv(): Promise<MovieItem[]> {
+  const shows = await fetchPages("/trending/tv/week", { language: "en-US" }, [1, 2, 3]);
+  return shows.map((show) => mapMovie(show, "tv"));
+}
+
 export async function getGlobalTop(): Promise<MovieItem[]> {
   const movies = await fetchPages("/movie/popular", { region: DEFAULT_CATALOG.region, language: DEFAULT_CATALOG.language }, [1, 2, 3, 4, 5]);
   return movies.map((m) => mapMovie(m));
@@ -122,6 +127,17 @@ export async function getMovieDetails(id: number, mediaType: "movie" | "tv" = "m
     ...mapMovie(data, mediaType),
     genreIds: data.genres?.map((g) => g.id) || [],
   };
+}
+
+export async function getMovieTrailer(id: number, mediaType: "movie" | "tv" = "movie"): Promise<string | null> {
+  const data = await tmdbFetch<{ results: { key: string; site: string; type: string; official?: boolean }[] }>(`/${mediaType}/${id}/videos`, { language: "en-US" });
+  const trailer = data.results.find((video) => video.site === "YouTube" && video.type === "Trailer" && video.official === true);
+  return trailer?.key || null;
+}
+
+export async function getUpcomingMovies(): Promise<MovieItem[]> {
+  const movies = await fetchPages("/movie/upcoming", { region: "IN", language: "en-US" }, [1, 2]);
+  return movies.map((movie) => mapMovie(movie));
 }
 
 export async function getKidsContent(): Promise<MovieItem[]> {

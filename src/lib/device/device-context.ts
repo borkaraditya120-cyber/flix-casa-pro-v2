@@ -17,9 +17,12 @@ export function detectDeviceEnvironment(): DeviceEnvironment {
   }
 
   const userAgent = navigator.userAgent || "";
+  const viewportWidth = typeof window === "undefined" ? 0 : window.innerWidth;
+  const hasFinePointer = typeof window !== "undefined" && window.matchMedia?.("(hover: hover) and (pointer: fine)").matches === true;
+  const hasTouch = navigator.maxTouchPoints > 0 || MOBILE_USER_AGENT.test(userAgent);
   const isElectron = /electron/i.test(userAgent) || Boolean((window as Window & { process?: { type?: string } }).process?.type === "renderer");
-  const isTV = TV_USER_AGENT.test(userAgent) || (navigator.maxTouchPoints > 0 && window.matchMedia?.("(min-width: 1200px)").matches === true);
-  const isMobile = MOBILE_USER_AGENT.test(userAgent) && !isTV;
+  const isTV = TV_USER_AGENT.test(userAgent) || (viewportWidth >= 1280 && !hasFinePointer && !hasTouch);
+  const isMobile = !isTV && (MOBILE_USER_AGENT.test(userAgent) || (viewportWidth < 1024 && hasTouch));
   const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
   const platform: DevicePlatform = isTV ? "tv" : isMobile ? "mobile" : "desktop";
 

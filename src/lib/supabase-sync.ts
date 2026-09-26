@@ -11,7 +11,7 @@ export interface PlaybackSyncEntry {
 }
 
 export async function upsertPlaybackProgress(entry: PlaybackSyncEntry) {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || !supabase) {
+  if (!supabase) {
     return { ok: false, reason: "supabase-missing-config" };
   }
 
@@ -36,7 +36,7 @@ export async function upsertPlaybackProgress(entry: PlaybackSyncEntry) {
 }
 
 export async function getPlaybackProgress(userId: string, profileId?: string | null, movieId?: number) {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || !supabase) {
+  if (!supabase) {
     return null;
   }
 

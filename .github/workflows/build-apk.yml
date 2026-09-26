@@ -9,6 +9,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: standard
+            gradle-task: assembleStandardRelease
+          - variant: pro
+            gradle-task: assembleProRelease
+          - variant: tv
+            gradle-task: assembleTvRelease
 
     steps:
       - name: Checkout Code
@@ -23,7 +33,9 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Build Next.js Static Export
+      - name: Build Next.js Static Export for ${{ matrix.variant }}
+        env:
+          NEXT_PUBLIC_APP_VARIANT: ${{ matrix.variant }}
         run: npm run build
 
       - name: Sync Capacitor Android
@@ -35,17 +47,15 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Build All Android APK Variants
+      - name: Build ${{ matrix.variant }} Android APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleProRelease assembleStandardRelease assembleTvRelease
+          ./gradlew ${{ matrix.gradle-task }}
 
       - name: Upload APKs to GitHub Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: FlixCasa-APKs
+          name: FlixCasa-${{ matrix.variant }}-APK
           path: |
-            android/app/build/outputs/apk/pro/release/*.apk
-            android/app/build/outputs/apk/standard/release/*.apk
-            android/app/build/outputs/apk/tv/release/*.apk
+            android/app/build/outputs/apk/${{ matrix.variant }}/release/*.apk

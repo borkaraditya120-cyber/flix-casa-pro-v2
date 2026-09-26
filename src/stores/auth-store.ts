@@ -50,9 +50,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     const { account } = get();
     await fetch(cloudApi("/api/auth/logout"), { method: "POST", credentials: "include" });
-    if (supabase) {
-      await supabase.auth.signOut().catch(() => undefined);
-    }
+    if (supabase) await supabase.auth.signOut().catch(() => undefined);
     if (account) {
       const { removeEncryptedItem } = await import("@/lib/storage");
       removeEncryptedItem("session", account.id);
